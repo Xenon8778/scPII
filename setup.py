@@ -5,17 +5,17 @@ with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="scPII", # Replace "scPRS-your-username" with your desired package name
+    name="scPII", 
     version="0.0.1",
-    author="Shreyan Gupta, TAMU", # Replace "Your Name" with your name
-    author_email="xenon8778@tamu.edu", # Replace with your email
-    description="A short description of your project.", # A brief description
+    author="Shreyan Gupta, TAMU", 
+    author_email="xenon8778@tamu.edu", 
+    description="A Python package for perturbation response scanning on gene regulatory networks.", # A brief description
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/your-username/scPII", # Replace with your GitHub repository URL
+    url="https://github.com/xenon8778/scPII", 
     license="MIT", 
     project_urls={
-        "Bug Tracker": "https://github.com/your-username/scPRS/issues",
+        "Bug Tracker": "https://github.com/xenon8778/scPRS/issues",
     },
     classifiers=[
         "Programming Language :: Python :: 3",
@@ -25,7 +25,7 @@ setuptools.setup(
     ],
     package_dir={"": "src"}, # Your Python code will be in a 'src' directory
     packages=setuptools.find_packages(where="src"),
-    python_requires=">=3.9", # Specify the minimum Python version
+    python_requires=">=3.9", 
     install_requires=[
         "numpy",
         "pandas",
