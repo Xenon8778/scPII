@@ -1,14 +1,5 @@
 [build-system]
-requires = ["setuptools >= 77.0.3",
-        "numpy",
-        "pandas",
-        "scipy",
-        "networkx",
-        "scikit-learn",
-        "joblib",
-        "matplotlib",
-        "tqdm",
-    ]
+requires = ["setuptools >= 77.0.3"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -27,6 +18,15 @@ classifiers = [
 ]
 license = "MIT"
 license-files = ["LICEN[CS]E*"]
+dependencies = ["numpy",
+        "pandas",
+        "scipy",
+        "networkx",
+        "scikit-learn",
+        "joblib",
+        "matplotlib",
+        "tqdm",
+    ]
 
 [project.urls]
 Homepage = "https://github.com/xenon8778/scPII"
