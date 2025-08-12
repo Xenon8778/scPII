@@ -9,6 +9,12 @@ You can install this package directly from GitHub using pip:
 ```shell
 pip install git+https://github.com/xenon8778/scPII.git
 ```
+or install it manually from source:
+```shell
+git clone https://github.com/xenon8778/scPII.git
+cd scPII
+pip install .
+```
 ## Usage
 Here's a quick example of how to use the main function:
 ```python
