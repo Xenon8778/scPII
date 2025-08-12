@@ -6,8 +6,8 @@ This package provides functionality to perform perturbation response scanning (P
 
 ## Installation
 You can install this package directly from GitHub using pip:
-```bash
-pip install git+[https://github.com/xenon8778/scPII.git](https://github.com/xenon8778/scPII.git)
+```shell
+pip install git+https://github.com/xenon8778/scPII.git
 ```
 ## Usage
 Here's a quick example of how to use the main function:
