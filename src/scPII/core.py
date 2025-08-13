@@ -260,12 +260,12 @@ def scPRS(X: pd.DataFrame,
         gene_names: str = None,
         Corr_cutoff: float = 0,
         alpha: float = 1,
-        getPval: bool = True,
-        cluster: bool = True,
+        getPval: bool = False,
+        cluster: bool = False,
         Kclusters: int = 10,
-        n_comps: int = 50,
+        n_comps: int = None,
         use_GC: bool = True,
-        weighted: bool = False,
+        weighted: bool = True,
         explainedV: float = 1,
         n_boot: int = 10000,
         n_jobs: int = 1,
@@ -284,12 +284,12 @@ def scPRS(X: pd.DataFrame,
         The minimum correlation cutoff to filter out edges with low interaction scores from input gene regulatory network
     alpha = float, default = 1
         The effect of sensitivity on impact computation.
-    clusters: bool, default = True
+    clusters: bool, default = False
         Whether to perform hierarchical clustering of nodes
     Kclusters: int, default = 10
         The number of effectiveness and sensitivity hierarchical clusters 
-    n_comps: int, default = 50
-        n PC components for PRS computation 
+    n_comps: int, default = None
+        number of PCs for covariance matrix computation. Suggested to use None for automatic selection based on explained variance, else use 20.
     use_GC = bool, default = True
         Whether to use the giant component of graph for PRS computation
     weighted: bool, default = True
