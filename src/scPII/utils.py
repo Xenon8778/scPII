@@ -1,9 +1,9 @@
 import numpy as np
 from numpy import isscalar
 
-def div0(a: np.float, 
-         b: np.float, 
-         defval: np.float=0):
+def div0(a: float, 
+         b: float, 
+         defval: float=0):
     """ Performs ``true_divide`` but ignores the error when division by zero 
     (result is set to zero instead). """
 
