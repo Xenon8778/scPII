@@ -30,4 +30,4 @@ dependencies = ["numpy",
 
 [project.urls]
 Homepage = "https://github.com/xenon8778/scPII"
-Issues = "https://github.com/xenon8778/scPRS/issues"
+Issues = "https://github.com/xenon8778/scPII/issues"
