@@ -40,7 +40,7 @@ def decompose(L,
                     break
             if verbose == True:
                 print(str(n_comps)+ ' components explain '+str(explainedV)+' of total variance.')
-            if n_comps <= 5:
+            if n_comps < 5:
                 sys.exit("Error: Less than 5 Eigenpairs explain {explainedV} variance. Please increase 'explainedV'.")
         
             values,vectors = np.linalg.eigh(L)
