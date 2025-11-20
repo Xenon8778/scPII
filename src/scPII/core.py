@@ -266,7 +266,7 @@ def scPRS(X: pd.DataFrame,
         n_comps: int = None,
         use_GC: bool = True,
         weighted: bool = True,
-        explainedV: float = 1,
+        explainedV: float = 0.1,
         n_boot: int = 10000,
         n_jobs: int = 1,
         verbose: bool = True
@@ -355,8 +355,11 @@ def scPRS(X: pd.DataFrame,
                 sys.exit("Too few genes")
 
         values, vectors = decompose(L=L, n_genes=n_genes, n_comps=n_comps,
-                                    explainedV= explainedV,
+                                    explainedV=explainedV,
                                     verbose=verbose)
+        
+        if len(vectors) <= 5:
+            sys.exit("Error: Less than 5 Eigenpairs explain {explainedV} variance. Please increase 'explainedV'.")
         
         # PRS matric computation
         norm_prs_matrix = computePRS(values=values, n_genes=n_genes,
