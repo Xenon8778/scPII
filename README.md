@@ -28,6 +28,8 @@ cd scPII
 pip install .
 ```
 ## Usage
+Check out the example notebook - [Here!](docs/notebooks/small_simulated_example.ipynb)
+
 Assume 'G' is a graph and 'A' is its adjacency matrix stored as pandas DataFrame representing your GRN. Here's a quick example of how to use the main function:
 
 ```python
