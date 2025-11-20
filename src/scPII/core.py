@@ -40,6 +40,9 @@ def decompose(L,
                     break
             if verbose == True:
                 print(str(n_comps)+ ' components explain '+str(explainedV)+' of total variance.')
+            if n_comps <= 5:
+                sys.exit("Error: Less than 5 Eigenpairs explain {explainedV} variance. Please increase 'explainedV'.")
+        
             values,vectors = np.linalg.eigh(L)
             values = values[:n_comps+1]
             vectors = vectors[:, :n_comps+1]
@@ -357,9 +360,6 @@ def scPRS(X: pd.DataFrame,
         values, vectors = decompose(L=L, n_genes=n_genes, n_comps=n_comps,
                                     explainedV=explainedV,
                                     verbose=verbose)
-        
-        if len(vectors) <= 5:
-            sys.exit("Error: Less than 5 Eigenpairs explain {explainedV} variance. Please increase 'explainedV'.")
         
         # PRS matric computation
         norm_prs_matrix = computePRS(values=values, n_genes=n_genes,
