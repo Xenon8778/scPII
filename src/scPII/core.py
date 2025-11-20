@@ -470,37 +470,6 @@ def scPRS(X: pd.DataFrame,
     return output
 
 
-# def plot_heat(mat, log1p = False, figsize = (6,6), dpi = 100, cmap = 'inferno'):
-#     if log1p == True:
-#         mat = np.log(mat+1)
-#     fig = plt.figure(figsize=figsize, constrained_layout=True, dpi=dpi)
-#     gs = fig.add_gridspec(8, 10)
-
-#     ax1 = fig.add_subplot(gs[1:8, 0:8]) 
-#     ax2 = fig.add_subplot(gs[0, 0:8])
-#     ax3 = fig.add_subplot(gs[1:8, 8:10])
-
-
-#     im = ax1.imshow(mat, aspect="auto", cmap = cmap)
-#     ax1.set_xticks([])
-#     ax1.set_yticks([])
-#     ax1.set_xlabel('Sensitivity')
-#     ax1.set_ylabel('Effectiveness')
-#     cbar = ax3.figure.colorbar(im, ax=ax3,location='right', shrink=0.5)
-
-#     ax2.bar(x = np.arange(0,mat.shape[0]), height= np.mean(mat, axis=0),
-#             edgecolor = 'black',linewidth = 0, color = 'black')
-#     ax2.set_xticks([])
-#     ax2.set_yticks([])
-#     ax2.margins(x=0)
-
-#     ax3.barh(y = -np.arange(0,mat.shape[0]), width = np.mean(mat, axis=1),
-#             edgecolor = 'black',linewidth = 0, color = 'black')
-#     ax3.set_xticks([])
-#     ax3.set_yticks([])
-#     ax3.margins(y=0)
-
-
 def get_graph_summary(G):
     df = pd.DataFrame()
     L = nx.laplacian_matrix(G, weight=None).todense()

@@ -8,9 +8,12 @@ version = "0.0.1"
 authors = [
   { name="Shreyan Gupta, TAMU", email="xenon8778@tamu.edu" },
 ]
-description = "A Python package for perturbation response scanning on gene regulatory networks."
+description = "A perturbation response scanning tool on single-cell gene regulatory networks."
 readme = "README.md"
 requires-python = ">=3.9"
+
+exclude = ["docs"]
+
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",

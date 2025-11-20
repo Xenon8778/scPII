@@ -1,8 +1,20 @@
 # scPII
+<!-- [![Downloads](https://pepy.tech/badge/scPII)](https://pepy.tech/project/scPII) -->
+[![Python](https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2FXenon8778%2FscPII%2Frefs%2Fheads%2Fmain%2Fpyproject.toml
+)](https://img.shields.io/python/required-version-toml)
+[![GitHub license](https://img.shields.io/github/license/Xenon8778/scPII.svg)](https://github.com/Xenon8778/scPII/LICENSE)
+
+
 A Python package for perturbation response scanning on gene regulatory networks.
 
+
+
 ## Introduction
-This package provides functionality to perform perturbation response scanning (PRS) on gene regulatory networks. It includes functions for eigen decomposition, PRS matrix computation, and summarizing key metrics for each gene.
+*Single-cell pertubation impact index (scPII)*, computes an Impact metric to quantify global effects of gene pertubations using perturbation response scanning (PRS) on gene regulatory networks.
+
+<br>
+<img src="./docs/assets/workflow.png" style="max-width:700px;width:100%" >
+<br> 
 
 ## Installation
 You can install this package directly from GitHub using pip:
@@ -16,17 +28,21 @@ cd scPII
 pip install .
 ```
 ## Usage
-Here's a quick example of how to use the main function:
+Assume 'G' is a graph and 'A' is its adjacency matrix stored as pandas DataFrame representing your GRN. Here's a quick example of how to use the main function:
+
 ```python
 import pandas as pd
 import networkx as nx
 from scPII.core import scPRS
 
-# Example usage (you'll need to provide your own data)
-# Assume 'X' is a pandas DataFrame representing your gene regulatory network
-# and 'gene_names' is corresponding list of gene names.
-# output = scPRS(X=my_data, gene_names=my_genes, Corr_cutoff=0.5)
-# print(output['Summary'].head())
+G = nx.powerlaw_cluster_graph(25, 1, 0.6, seed=0)
+inputnet = pd.DataFrame(nx.adjacency_matrix(G).todense())
+
+# Run perturbation response scanning (PRS)
+PRSout = scPRS(inputnet)
+
+# Summary statistics for each gene in GRN is stored in Summary layer.
+print(PRSout['Summary'].head())
 ```
 
 <!-- ## Contributing
