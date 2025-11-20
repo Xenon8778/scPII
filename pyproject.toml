@@ -12,8 +12,6 @@ description = "A perturbation response scanning tool on single-cell gene regulat
 readme = "README.md"
 requires-python = ">=3.9"
 
-exclude = ["docs"]
-
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
