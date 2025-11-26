@@ -267,7 +267,6 @@ def scPRS(X: pd.DataFrame,
         cluster: bool = False,
         Kclusters: int = 10,
         n_comps: int = None,
-        use_GC: bool = True,
         weighted: bool = True,
         explainedV: float = 0.1,
         n_boot: int = 10000,
@@ -293,8 +292,6 @@ def scPRS(X: pd.DataFrame,
         The number of effectiveness and sensitivity hierarchical clusters 
     n_comps: int, default = None
         number of PCs for covariance matrix computation. Suggested to use None for automatic selection based on explained variance, else use 20.
-    use_GC = bool, default = True
-        Whether to use the giant component of graph for PRS computation
     weighted: bool, default = True
         Whether to use weighted adjacency matrix for PRS computation 
     verbose: bool, default = True
@@ -335,139 +332,57 @@ def scPRS(X: pd.DataFrame,
     edgelist = edgelist[edgelist['Val'] != 0].reset_index(drop=True)
 
     G = nx.from_pandas_edgelist(edgelist, source='gene1', target='gene2', edge_attr = True)
-    if use_GC == True:
-        # Calculating giant component - Largest connected componenet of the graph
-        if verbose == True:
-            print('Calculating giant components...')
-        Gc = max([G.subgraph(c).copy() for c in nx.connected_components(G)], key=len)
-        graph_gc = Gc
-        if verbose == True:
-            print('Giant component shape: ', nx.adjacency_matrix(Gc).shape)
+    # Calculating giant component - Largest connected componenet of the graph
+    if verbose == True:
+        print('Calculating giant component...')
+    Gc = max([G.subgraph(c).copy() for c in nx.connected_components(G)], key=len)
+    graph_gc = Gc
+    if verbose == True:
+        print('Giant component shape: ', nx.adjacency_matrix(Gc).shape)
 
-        # Getting Laplacian matrix
-        if weighted == True:
-            L = nx.laplacian_matrix(graph_gc, weight='Val').todense()
-        else:
-            L = nx.laplacian_matrix(graph_gc, weight=None).todense()
-
-        # Eigen decomposition
-        if verbose == True:
-            print('Performing eigen decomposition...')
-        n_genes = L.shape[0]
-        if n_genes <= 5:
-                sys.exit("Too few genes")
-
-        values, vectors = decompose(L=L, n_genes=n_genes, n_comps=n_comps,
-                                    explainedV=explainedV,
-                                    verbose=verbose)
-        
-        # PRS matric computation
-        norm_prs_matrix = computePRS(values=values, n_genes=n_genes,
-                                vectors=vectors, verbose=verbose)
-        
-        # Get summary metrics
-        summDF = getSummaryDF(X=norm_prs_matrix, G=graph_gc, L=L, alpha=alpha, n_boot=n_boot, n_jobs=n_jobs,
-                        n_genes=n_genes, getPval=getPval, verbose=verbose)
-        
-        #storing node attributes
-        node_eff = summDF[['gene_name','eff']].set_index('gene_name').T.to_dict('records')
-        nx.set_node_attributes(graph_gc, node_eff[0], name='eff')
-        node_sens = summDF[['gene_name','sens']].set_index('gene_name').T.to_dict('records')
-        nx.set_node_attributes(graph_gc, node_sens[0], name='sens')
-        node_impact = summDF[['gene_name','impact']].set_index('gene_name').T.to_dict('records')
-        nx.set_node_attributes(graph_gc, node_impact[0], name='impact')
-
-        # summDF['smallest_eigenvec'] = vectors[:, 2]
-        if verbose == True:
-            print('DONE')
-
-        # Clustering
-        if cluster == True:
-            clustered_mat, summDF = clusterPRS(X=norm_prs_matrix, G=graph_gc, df=summDF,
-                                        Kclusters=Kclusters,verbose=verbose)      
-        else:
-            clustered_mat = pd.DataFrame(norm_prs_matrix, index = np.array(graph_gc.nodes), columns= np.array(graph_gc.nodes))
-
+    # Getting Laplacian matrix
+    if weighted == True:
+        L = nx.laplacian_matrix(graph_gc, weight='Val').todense()
     else:
-        subgraphs = [G.subgraph(c).copy() for c in nx.connected_components(G)]
-        if verbose:
-            print('Number of sub-graphs: ', len(subgraphs))
+        L = nx.laplacian_matrix(graph_gc, weight=None).todense()
 
-        # Get subgraphs with atleast 10 genes
-        sg_mask = np.array([True if len(i.nodes) > 10 else False for i in subgraphs])
-        subgraphs_f = [subgraphs[i] for i in np.where(sg_mask == True)[0]]
-        if verbose:
-            print('Number of viable sub-graphs: ', len(subgraphs_f))
-        
-        summDFs = {}
-        graphs = {}
-        PRSmats = {}
+    # Eigen decomposition
+    if verbose == True:
+        print('Performing eigen decomposition...')
+    n_genes = L.shape[0]
+    if n_genes <= 5:
+            sys.exit("Too few genes")
 
-        for i,nam in enumerate(subgraphs_f):
-            # Get subgraph
-            graph_gc = subgraphs_f[i]
-            print('Sub Graph shape: ', nx.adjacency_matrix(graph_gc).shape)
+    values, vectors = decompose(L=L, n_genes=n_genes, n_comps=n_comps,
+                                explainedV=explainedV,
+                                verbose=verbose)
+    
+    # PRS matric computation
+    norm_prs_matrix = computePRS(values=values, n_genes=n_genes,
+                            vectors=vectors, verbose=verbose)
+    
+    # Get summary metrics
+    summDF = getSummaryDF(X=norm_prs_matrix, G=graph_gc, L=L, alpha=alpha, n_boot=n_boot, n_jobs=n_jobs,
+                    n_genes=n_genes, getPval=getPval, verbose=verbose)
+    
+    #storing node attributes
+    node_eff = summDF[['gene_name','eff']].set_index('gene_name').T.to_dict('records')
+    nx.set_node_attributes(graph_gc, node_eff[0], name='eff')
+    node_sens = summDF[['gene_name','sens']].set_index('gene_name').T.to_dict('records')
+    nx.set_node_attributes(graph_gc, node_sens[0], name='sens')
+    node_impact = summDF[['gene_name','impact']].set_index('gene_name').T.to_dict('records')
+    nx.set_node_attributes(graph_gc, node_impact[0], name='impact')
 
-            # Getting Laplacian matrix
-            if weighted == True:
-                L = nx.laplacian_matrix(graph_gc, weight='Val').todense()
-            else:
-                L = nx.laplacian_matrix(graph_gc, weight=None).todense()
+    # summDF['smallest_eigenvec'] = vectors[:, 2]
+    if verbose == True:
+        print('DONE')
 
-            # Eigen decomposition
-            if verbose == True:
-                print('Performing eigen decomposition...')
-            n_genes = L.shape[0]
-            if n_genes <= 10:
-                    sys.exit("Too few genes")
-        
-            values, vectors = decompose(L=L, n_genes=n_genes, n_comps = n_comps,
-                                        explainedV= explainedV,
-                                        verbose=verbose)
-            
-            # PRS matric computation
-            norm_prs_matrix = computePRS(values=values, n_genes=n_genes,
-                                    vectors=vectors, verbose=verbose)
-            
-            # Get summary metrics
-            summDF = getSummaryDF(X=norm_prs_matrix, G=graph_gc, L=L, alpha=alpha,
-                            n_genes=n_genes, verbose=verbose)
-            
-            #storing node attributes
-            node_eff = summDF[['gene_name','eff']].set_index('gene_name').T.to_dict('records')
-            nx.set_node_attributes(graph_gc, node_eff[0], name='eff')
-            node_sens = summDF[['gene_name','sens']].set_index('gene_name').T.to_dict('records')
-            nx.set_node_attributes(graph_gc, node_sens[0], name='sens')
-            node_impact = summDF[['gene_name','impact']].set_index('gene_name').T.to_dict('records')
-            nx.set_node_attributes(graph_gc, node_impact[0], name='impact')
-
-            #summDF['smallest_eigenvec'] = vectors[:, 2]
-            if verbose == True:
-                print('DONE')
-
-            # Clustering
-            if cluster == True:
-                clustered_mat, summDF = clusterPRS(X=norm_prs_matrix, G=graph_gc, df=summDF,
-                                            Kclusters=Kclusters,verbose=verbose)      
-            else:
-                clustered_mat = pd.DataFrame(norm_prs_matrix, index = np.array(graph_gc.nodes), columns= np.array(graph_gc.nodes))
-            
-            summDF['subgraph'] = i
-            
-            PRSmats[i] = clustered_mat
-            graphs[i] = graph_gc
-            summDFs[i] = summDF
-
-        clustered_mat = PRSmats
-        graph_gc = graphs
-        DFlist = [df for key,df in summDFs.items()]
-        summDF = pd.DataFrame()
-
-        if len(DFlist) > 1:
-            for df in DFlist:
-                summDF = pd.concat([summDF, df], axis=0)
-        else:
-            summDF = summDFs[0]
+    # Clustering
+    if cluster == True:
+        clustered_mat, summDF = clusterPRS(X=norm_prs_matrix, G=graph_gc, df=summDF,
+                                    Kclusters=Kclusters,verbose=verbose)      
+    else:
+        clustered_mat = pd.DataFrame(norm_prs_matrix, index = np.array(graph_gc.nodes), columns= np.array(graph_gc.nodes))
 
     output = {'PRSmatrix': clustered_mat, 'Summary':summDF, 'Graph':graph_gc}
     return output
