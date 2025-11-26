@@ -1,5 +1,6 @@
 from networkx import powerlaw_cluster_graph, adjacency_matrix
 from pandas import DataFrame
+from scPII.core import scPRS
 
 def test_scPRS_no_cluster():
     G = powerlaw_cluster_graph(25, 1, 0.6, seed=0)
