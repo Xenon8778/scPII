@@ -1,3 +1,6 @@
+from networkx import powerlaw_cluster_graph
+from pandas import DataFrame
+
 def test_scPRS_no_cluster():
     G = powerlaw_cluster_graph(25, 1, 0.6, seed=0)
     inputnet = DataFrame(nx.adjacency_matrix(G).todense())
