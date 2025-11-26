@@ -6,7 +6,8 @@ def test_scPRS_no_cluster():
     G = powerlaw_cluster_graph(25, 1, 0.6, seed=0)
     inputnet = DataFrame(adjacency_matrix(G).todense())
 
-    PRSout = scPRS(inputnet, genes=inputnet.index, cluster = False, getPval=False, n_comps=5)
+    PRSout = scPRS(inputnet, gene_names=inputnet.index,
+                   cluster = False, getPval=False, n_comps=5)
 
     assert len(PRSout) == 3
     assert isinstance(PRSout['PRSmatrix'], DataFrame)
