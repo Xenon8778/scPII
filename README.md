@@ -55,5 +55,6 @@ print(PRSout['Summary'].head())
 We welcome contributions! Please feel free to open an issue or submit a pull request. -->
 
 ## Benchmarking Results 
-Benchmarking results against various GRN construction algorithms, explained variance cutoffs and virtual KO tools are available at [10.5281/zenodo.17713781](10.5281/zenodo.17713781).
+Benchmarking results against various GRN construction algorithms, explained variance cutoffs and virtual KO tools are available at [10.5281/zenodo.17713781](https://10.5281/zenodo.17713781).
+
 
