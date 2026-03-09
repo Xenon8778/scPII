@@ -97,30 +97,51 @@ def computePRS(values, vectors, n_genes,
 
     return norm_prs_matrix
 
-def shuffle_means(X, alpha):
-    # Flatten the array
-    Y = X.copy()
-    np.fill_diagonal(Y, np.nan)
-    X_flat = Y.flatten()
-    np.random.shuffle(X_flat)
-    X_shuffled = X_flat.reshape(Y.shape)
-    del Y
-    eff_orig = np.nanmean(X_shuffled, axis=1)
-    sens_orig = np.nanmean(X_shuffled, axis=0)
+def shuffle_PRSmatrix(PRSmatrix, seed=1):
+    rng = np.random.default_rng(seed)
+    idxrow = rng.permutation(PRSmatrix.shape[0])
+    idxcol = rng.permutation(PRSmatrix.shape[0])
+    return PRSmatrix[np.ix_(idxrow, idxcol)]
+
+def shuffled_impacts(PRSmatrix, niter=1000, alpha=1):
+    mat = PRSmatrix.values
+    genes = PRSmatrix.index
+    n = mat.shape[0]
+
+    # weights matrix
+    W = 1 - np.eye(n)
+
+    # preallocate result matrix
+    res = np.zeros((n, niter))
+
+    for i in tqdm(range(niter)):
+        shuffledMat = shuffle_PRSmatrix(mat, seed=i)
+
+        eff = np.average(shuffledMat, weights=W, axis=1)
+        sens = np.average(shuffledMat, weights=W, axis=0)
+
+        eff = np.log1p(eff)
+        sens = np.log1p(sens) * alpha
+        impact = sens - eff
+
+        # fast min-max scaling
+        impact = (impact - impact.min()) / (impact.max() - impact.min())
+        res[:, i] = impact
+
+    resDF = pd.DataFrame(res, index=genes,
+                         columns=[f'impact_{i}' for i in range(niter)])
     
-    # Log transformation and impact calculation
-    impact_scores = np.log1p(eff_orig) - np.log1p(sens_orig) * alpha
-    impact_scores_mm = (impact_scores - min(impact_scores)) / (max(impact_scores) - min(impact_scores))
-    return impact_scores_mm
+    return resDF
 
 def getPvals(X,
             df,
-            n: int=10000,
+            niter: int=10000,
             alpha: float=1.0,
-            n_jobs: int=1,
+            two_sided=False,
             verbose: bool=True):
     """
-    Computes empirical p-values by shuffling the PRS matrix.
+    Compute empirical p-values comparing observed impact
+    against shuffled PRS impact distributions.
 
     Parameters
     ----------
@@ -132,8 +153,8 @@ def getPvals(X,
         Number of shuffles to perform.
     alpha : float, default=1
         Scaling factor for sensitivity.
-    n_jobs : int, default=1
-        Number of parallel jobs to run.
+    two_sided : bool
+        Whether to compute two-sided p-values    
     verbose : bool, default=True
         Whether to print progress messages.
 
@@ -146,25 +167,33 @@ def getPvals(X,
     ----------
     Davison, A. C., & Hinkley, D. V. (1997). Bootstrap Methods and Their Application. Cambridge University Press.
     """
-    # Computes emperical Pvalues by shuffling the PRS matrix
-    impacts = pd.DataFrame(np.zeros((X.shape[0],n)))
-    if verbose:
-        print('Computing p-values...')
 
-    from joblib import parallel_backend
-
+    obs = df['impact'].values
     if verbose:
-        with parallel_backend('loky', n_jobs=n_jobs):
-            results = Parallel()(delayed(shuffle_means)(X, alpha) for _ in tqdm(range(n)))
+        print(f'Shuffling PRS matrix over {niter} iterations...')
+    null = shuffled_impacts(X, niter=niter, alpha=alpha).values
+    n_perm = null.shape[1]
+
+    # Computes emperical Pvalues by shuffling the PRS matrix following Davison and Hinkley
+    if verbose:
+        print(f'Computing P-values...')
+    if two_sided:
+        pvals = (1 + np.sum(np.abs(null) >= np.abs(obs[:, None]), axis=1)) / (n_perm + 1)
     else:
-        with parallel_backend('loky', n_jobs=n_jobs):
-            results = Parallel()(delayed(shuffle_means)(X, alpha) for _ in range(n))
+        pvals = (1 + np.sum(null >= obs[:, None], axis=1)) / (n_perm + 1)
 
-    for i, result in enumerate(results):
-        impacts[i] = result
+    # Optional Z-score
+    # zscores = (obs - null.mean(axis=1)) / null.std(axis=1)
 
-    # empirical p-value formula following Davison and Hinkley
-    P = (np.sum(impacts.sub(df['impact'], axis=0) > 0, axis=1) + 1) / (n + 1)
+    res = pd.DataFrame({
+        "impact_obs": obs,
+        # "null_mean": null.mean(axis=1),
+        # "null_sd": null.std(axis=1),
+        # "zscore": zscores,
+        "pval": pvals
+    })
+
+    P = res['pval']
     return P
 
 def getSummaryDF(X, G, L, 
@@ -172,8 +201,7 @@ def getSummaryDF(X, G, L,
                 n_genes: int = None, 
                 alpha: float = 1, 
                 verbose: bool = True,
-                n_boot: int = 10000,
-                n_jobs: int = 1):
+                n_boot: int = 10000):
     """
     Summarizes the PRS matrix and computes impact scores and p-values.
 
@@ -228,7 +256,10 @@ def getSummaryDF(X, G, L,
 
     # Calculate P Values
     if getPval:
-        df_['P'] = getPvals(X=X, df=df_, alpha=alpha, n=n_boot, n_jobs=n_jobs, verbose=verbose)
+        df_['pval'] = getPvals(X=pd.DataFrame(X, index=df['gene_name']),
+                               df=df_, alpha=alpha, 
+                               niter=n_boot,  
+                               verbose=verbose)
     
     df_ = df_.sort_values('impact', ascending=False)
     return df_
@@ -269,8 +300,7 @@ def scPRS(X: pd.DataFrame,
         n_comps: int = None,
         weighted: bool = True,
         explainedV: float = 0.1,
-        n_boot: int = 10000,
-        n_jobs: int = 1,
+        n_boot: int = 1000,
         verbose: bool = True
         ):
     """
@@ -362,7 +392,7 @@ def scPRS(X: pd.DataFrame,
                             vectors=vectors, verbose=verbose)
     
     # Get summary metrics
-    summDF = getSummaryDF(X=norm_prs_matrix, G=graph_gc, L=L, alpha=alpha, n_boot=n_boot, n_jobs=n_jobs,
+    summDF = getSummaryDF(X=norm_prs_matrix, G=graph_gc, L=L, alpha=alpha, n_boot=n_boot,
                     n_genes=n_genes, getPval=getPval, verbose=verbose)
     
     #storing node attributes
