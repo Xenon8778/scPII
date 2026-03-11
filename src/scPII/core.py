@@ -436,3 +436,95 @@ def get_graph_summary(G):
     return df
 
 
+def differentialPRS(PRS_case,
+                    PRS_control,
+                    impact_threshold: float = 0.75,
+                    alpha: float = 1.0,
+                    eps: float = 0.1,
+                    niter: int = 1000,
+                    two_sided: bool = False,
+                    verbose: bool = True):
+    """
+    Compute differential PRS impact between two conditions.
+
+    Parameters
+    ----------
+    PRS_case : dict
+        Output of scPRS() for case condition.
+    PRS_control : dict
+        Output of scPRS() for control condition.
+    alpha : float, default=1
+        Scaling factor used for sensitivity.
+    eps : float, default=0.1
+        Stabilizer for denominator in delta impact.
+    niter : int, default=1000
+        Number of permutations for null distribution.
+    two_sided : bool, default=False
+        Whether to compute two-sided empirical p-values.
+    verbose : bool, default=True
+        Print progress.
+
+    Returns
+    -------
+    pd.DataFrame
+        Differential impact results with empirical p-values.
+    """
+
+    if verbose:
+        print("Computing differential impact...")
+
+    if (set(PRS_case['Summary']['gene_name'] ) != set(PRS_control['Summary']['gene_name'])):
+        sys.exit("PRS outputs don't have same genes. Ensure scPII has been run on GRNs with same genes.")        
+
+    # Extract impact score
+    impact_case = PRS_case['Summary'].set_index('gene_name')['impact']
+    impact_ctrl = PRS_control['Summary'].set_index('gene_name')['impact']
+
+    df = pd.DataFrame({
+        "impactCase": impact_case,
+        "impactControl": impact_ctrl
+    })
+
+    df = df.loc[impact_case.index.intersection(impact_ctrl.index)]
+
+    # Differential impact
+    df["delta_impact"] = (df["impactCase"] - df["impactControl"]) / (df["impactControl"] + eps)
+
+    if verbose:
+        print(f"Generating shuffled null distributions ({niter} iterations)...")
+
+    # Permutation test
+    shuffled_ctrl = shuffled_impacts(
+        PRS_control['PRSmatrix'],
+        niter=niter,
+        alpha=alpha
+    )
+
+    shuffled_case = shuffled_impacts(
+        PRS_case['PRSmatrix'],
+        niter=niter,
+        alpha=alpha
+    )
+
+    shuffledDelta = (shuffled_case - shuffled_ctrl) / (shuffled_ctrl + eps)
+
+    obs = df["delta_impact"].values
+    null = shuffledDelta.values
+
+    n_perm = null.shape[1]
+
+    if verbose:
+        print("Computing empirical p-values...")
+
+    if two_sided:
+        pvals = (1 + np.sum(np.abs(null) >= np.abs(obs[:, None]), axis=1)) / (n_perm + 1)
+    else:
+        pvals = (1 + np.sum(null >= obs[:, None], axis=1)) / (n_perm + 1)
+
+    df["pval"] = pvals
+
+    if verbose:
+        print("DONE")
+
+    # Filter to return high impact genes only
+    return df[df['impactCase'] > impact_threshold].sort_values("delta_impact", ascending=False)
