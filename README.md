@@ -51,6 +51,32 @@ PRSout = scPRS(inputnet)
 print(PRSout['Summary'].head())
 ```
 
+## Differential Impact Analysis
+```python
+import pandas as pd
+import networkx as nx
+from scPII.core import scPRS, differentialPRS
+
+# Generate 1st Graph - Control
+G1 = nx.powerlaw_cluster_graph(100, 1, 0.6, seed=0)
+inputnet1 = pd.DataFrame(nx.adjacency_matrix(G1).todense())
+genes1 = inputnet1.index
+
+# Generate 2nd Graph - Case
+G2 = nx.powerlaw_cluster_graph(100, 1, 0.6, seed=5)
+inputnet2 = pd.DataFrame(nx.adjacency_matrix(G2).todense())
+genes2 = inputnet2.index
+
+# Perform PRS on both graphs
+PRSoutControl = scPRS(inputnet1, explainedV=0.5, gene_names = genes, getPval = True)
+PRSoutCase = scPRS(inputnet2, explainedV=0.5, gene_names = genes, getPval = True) 
+
+# Perform differential impact analysis
+DI_result = differentialPRS(PRS_case = PRSoutCase,
+                            PRS_control = PRSoutControl)
+DI_result
+```
+
 <!-- ## Contributing
 We welcome contributions! Please feel free to open an issue or submit a pull request. -->
 
